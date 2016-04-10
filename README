@@ -1,0 +1,127 @@
+
+  ___ ___  ___   _   _ _   _ _ _ _
+ / __| _ \/ __| | | | | |_(_) (_) |_ _  _
+| (__|   / (__  | |_| |  _| | | |  _| || |
+ \___|_|_\\___|  \___/ \__|_|_|_|\__|\_, |
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=|__/-=
+
+Olivia Lucca Fraser
+October 25, 2015
+
+This is a straightforward implementation of the shift-register
+algorithm for computing cyclic redundancy checks on bitstreams.
+
+An automated series of tests can be run using the bash script,
+crc-experiment.sh, or the utility can be played with directly.
+The utility admits a variety of command line options, which are
+detailed in the help menu:
+
+CRC UTILITY
+=-=-=-=-=-=
+Usage: ./CRC [OPTIONS]
+-v: verbose
+-q: quiet (diable verbose output)
+-f <filename>: supply file as input, instead of stdin
+-f - : read from stdin (default)
+-s: execute send phase only; append remainder, but do not check
+-r: execute receive phase only; check for remainder, but don't append
+-b: read input as binary string of ASCII '0's and '1's
+-c: read input as raw characters [default]
+-o: output bitstring only: use with -b to chain CRC pipes together
+-e <burst length>: introduce burst error of <burst length> bits
+-g <generator>: supply alternate CRC polynomial in hex or decimal
+-h: display this help menu.
+
+
+Input can be provided as either a stream of raw characters (using
+the -c flag, which is also the default setting), or binary notation
+(using the -b flag) -- i.e., a series of ASCII '0's and '1's (bytes
+0x30 and 0x31, not 0x00 and 0x01). 
+
+A burst error can be introduced using the -e flag, and an integer
+argument.
+
+The default generator is 0x04C11DB7, which is commonly used in
+CRC-32 applications. Other generators can be substituted for this
+one, using the -g flag, and a numerical argument (in either decimal
+or hexidecimal notation). 
+
+The -s and -r flags can be used to separate the send and receive
+functionality of the CRC programme. This can be useful for performing
+CRC calculations as needed (see 3ab.txt for some examples), or
+chaining instances of CRC together with Unix pipes.
+
+For example:
+
+$ echo 101101101 | ./CRC -sbog 0xb | ./CRC -rbvg 0xb
+
+MESSAGE READ: m	
+IN BINARY:    101101101001
+XORPLATE:     11
+[01] SHIFTREG: 001  FED: 1  
+[02] SHIFTREG: 010  FED: 0  
+[03] SHIFTREG: 101  FED: 1  
+[04] SHIFTREG: 000  FED: 1  XOR EVENT
+[05] SHIFTREG: 000  FED: 0  
+[06] SHIFTREG: 001  FED: 1  
+[07] SHIFTREG: 011  FED: 1  
+[08] SHIFTREG: 110  FED: 0  
+[09] SHIFTREG: 110  FED: 1  XOR EVENT
+[10] SHIFTREG: 111  FED: 0  XOR EVENT
+[11] SHIFTREG: 101  FED: 0  XOR EVENT
+[12] SHIFTREG: 000  FED: 1  XOR EVENT
+[13] SHIFTREG: 000  FED: 0  
+[14] SHIFTREG: 000  FED: 0  
+[15] SHIFTREG: 000  FED: 0  
+IN:  101101101001
+OUT: 101101101001
+
+NO CORRUPTION DETECTED.
+
+This is essentially the same as performing both calculations inside
+one instance of CRC with the following command:
+
+$ echo 101101101 | ./CRC -bg 0xb
+
+MESSAGE READ: m
+IN BINARY:    101101101
+XORPLATE:     11
+[01] SHIFTREG: 001  FED: 1  
+[02] SHIFTREG: 010  FED: 0  
+[03] SHIFTREG: 101  FED: 1  
+[04] SHIFTREG: 000  FED: 1  XOR EVENT
+[05] SHIFTREG: 000  FED: 0  
+[06] SHIFTREG: 001  FED: 1  
+[07] SHIFTREG: 011  FED: 1  
+[08] SHIFTREG: 110  FED: 0  
+[09] SHIFTREG: 110  FED: 1  XOR EVENT
+[10] SHIFTREG: 111  FED: 0  XOR EVENT
+[11] SHIFTREG: 101  FED: 0  XOR EVENT
+[12] SHIFTREG: 001  FED: 0  XOR EVENT
+(2) copying 0 from shiftreg to bitmsg_out bit #9
+(1) copying 0 from shiftreg to bitmsg_out bit #10
+(0) copying 1 from shiftreg to bitmsg_out bit #11
+IN:  101101101
+OUT: 101101101001
+
+XORPLATE:     11
+[01] SHIFTREG: 001  FED: 1  
+[02] SHIFTREG: 010  FED: 0  
+[03] SHIFTREG: 101  FED: 1  
+[04] SHIFTREG: 000  FED: 1  XOR EVENT
+[05] SHIFTREG: 000  FED: 0  
+[06] SHIFTREG: 001  FED: 1  
+[07] SHIFTREG: 011  FED: 1  
+[08] SHIFTREG: 110  FED: 0  
+[09] SHIFTREG: 110  FED: 1  XOR EVENT
+[10] SHIFTREG: 111  FED: 0  XOR EVENT
+[11] SHIFTREG: 101  FED: 0  XOR EVENT
+[12] SHIFTREG: 000  FED: 1  XOR EVENT
+[13] SHIFTREG: 000  FED: 0  
+[14] SHIFTREG: 000  FED: 0  
+[15] SHIFTREG: 000  FED: 0  
+IN:  101101101001
+OUT: 101101101001
+
+NO CORRUPTION DETECTED.
+
